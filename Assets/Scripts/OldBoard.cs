@@ -5,6 +5,7 @@ public class OldBoard : MonoBehaviour {
     public ConstantForce constForce;
     public float maxAcceleration;
     public float idealHeight;
+    public float maxHeight;
 
     // Use this for initialization
     void Start () {
@@ -12,17 +13,18 @@ public class OldBoard : MonoBehaviour {
         constForce = transform.GetComponent<ConstantForce>();
 	}
 	
-	// Update is called once per frame
 	void FixedUpdate () {
-        constForce.force = (new Vector3(0, VerticalForce(), 0));
-        //DampVel();
+        //rigidBody.AddForce(new Vector3(0, VerticalForce(), 0));
+        SlerpRotation();
     }
 
     float IdealY(Vector3 fromPos)
     {
         Vector3 fromPosition = new Vector3(fromPos.x, fromPos.y - transform.localScale.y / 2f, fromPos.z);
+
         RaycastHit hit;
         float idealY = 0.0f;
+
         if (Physics.Raycast(fromPos, -Vector3.up, out hit))
         {
             idealY = hit.point.y + this.idealHeight;
@@ -34,7 +36,9 @@ public class OldBoard : MonoBehaviour {
     float VerticalForce()
     {
         float height = Height();
-        float acceleration = Mathf.Max(0, VerticalAcceleration(height, Physics.gravity.y, maxAcceleration, IdealY(transform.position)));        
+        float acceleration = Mathf.Max(0, VerticalAcceleration(height, Physics.gravity.y, maxAcceleration, IdealY(transform.position)));
+
+        Debug.Log(acceleration);
 
         return acceleration * rigidBody.mass;
     }
@@ -42,10 +46,9 @@ public class OldBoard : MonoBehaviour {
     float Height()
     {
         RaycastHit hit;
-        float height = 0.0f;
+        float height = maxHeight;
         Vector3 fromPosition = new Vector3(transform.position.x, transform.position.y - transform.localScale.y / 2f, transform.position.z);
-        //Vector3 fromPosition = transform.position;
-        if (Physics.Raycast(fromPosition, -Vector3.up, out hit))
+        if (Physics.Raycast(fromPosition, -Vector3.up, out hit, maxHeight))
         {
             height = hit.distance;
         }
@@ -55,17 +58,13 @@ public class OldBoard : MonoBehaviour {
     float VerticalAcceleration(float height, float gravity, float maxAcceleration, float idealHeight)
     {        
         float acceleration = (height * ((-gravity - maxAcceleration) / idealHeight) + maxAcceleration);
-        Debug.Log("Height: " + height + ", acceleration: " + acceleration);
         return acceleration;
     }
 
-    void DampVel()
+    void SlerpRotation()
     {
-        Vector3 target = new Vector3(transform.position.x, IdealY(transform.position), transform.position.z);
-        Vector3 currentVel = rigidBody.velocity;
-        Vector3.SmoothDamp(transform.position, target, ref currentVel, 5.0f, 20);
-        rigidBody.velocity = currentVel;
+        float speed = Time.deltaTime * 20.0f;
+        Debug.Log(speed);
+        transform.rotation = Quaternion.Slerp(transform.rotation, new Quaternion(0, 0, 0, 0), speed);
     }
-
-    
 }
